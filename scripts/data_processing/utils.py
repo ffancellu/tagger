@@ -4,7 +4,7 @@
 import codecs
 
 # try different data formats
-def data2sents(sets,look_event,look_scope,lang):
+def data2sents(sets,look_event,look_scope,lang,tag_scheme):
     def get_uni_mapping(lang):
         mapping = {}
         f = codecs.open('NegNN/data/uni_pos_map/%s.txt' % lang,'rb','utf8').readlines()
@@ -43,6 +43,30 @@ def data2sents(sets,look_event,look_scope,lang):
         elif is_scope and look_scope:
             return 'I'
         else: return 'O'
+
+    def none2iob(ys):
+        for j, y in enumerate(ys):
+            for i, t in enumerate(y):
+                if t == "O":
+                    continue
+                elif t =="I":
+                    if (y[i-1] == "O" or i == 0) and y[i+1] == "I":
+                        ys[j][i] = "B"
+        return ys
+
+    def none2iobes(ys):
+        for j, y in enumerate(ys):
+            for i, t in enumerate(y):
+                if t == "O":
+                    continue
+                elif t =="I":
+                    if (y[i-1] == "O" or i == 0) and y[i+1] == "I":
+                        ys[j][i] = "B"
+                    if y[i-1] in ["I","B"] and (y[i+1] == "O" or i+1 == len(y)-1):
+                        ys[j][i] = "E"
+                    if any([i==0 and y[i+1] == "O", i+1 == len(y)-1 and y[i-1]=="O", y[i-1]=="O" and y[i+1]=="O"]):
+                        ys[j][i] = "S"
+        return ys
 
     sents = []
     tag_sents = []
@@ -111,5 +135,12 @@ def data2sents(sets,look_event,look_scope,lang):
     # make normal POS tag into uni POS tags
     pos2uni = get_uni_mapping(lang)
     tag_uni_sents = [[pos2uni[t] for t in _s] for _s in tag_sents]
-
+    if tag_scheme == 'IOB':
+        ys = none2iob(ys)
+    if tag_scheme == 'IOBES':
+        print "Before: ", ys[0]
+        print "Before: ", ys[4]
+        ys = none2iobes(ys)
+        print "After: ", ys[0]
+        print "After: ", ys[4]
     return sents,tag_sents,tag_uni_sents,ys,cues_one_hot,scopes_one_hot,lengths

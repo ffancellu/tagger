@@ -25,7 +25,8 @@ class Model(object):
             assert parameters and models_path
             # Create a name based on the parameters
             self.parameters = parameters
-            self.name = get_name(parameters)
+            # self.name = get_name(parameters)
+            self.name = 'test'
             # Model location
             model_path = os.path.join(models_path, self.name)
             self.model_path = model_path
@@ -118,6 +119,7 @@ class Model(object):
               word_bidirect,
               lr_method,
               pre_emb,
+              pre_voc,
               crf,
               pos_dim,
               n_pos,
@@ -171,14 +173,13 @@ class Model(object):
                 print 'Loading pretrained embeddings from %s...' % pre_emb
                 pretrained = {}
                 emb_invalid = 0
-                for i, line in enumerate(codecs.open(pre_emb, 'r', 'utf-8')):
-                    line = line.rstrip().split()
-                    if len(line) == word_dim + 1:
-                        pretrained[line[0]] = np.array(
-                            [float(x) for x in line[1:]]
-                        ).astype(np.float32)
-                    else:
-                        emb_invalid += 1
+                emb_matrix = np.load(pre_emb)
+                pre_w2idxs = dict([(w,i) for i,w in enumerate(np.load(pre_voc))])
+                print pre_w2idxs.items()[:10]
+                assert emb_matrix[0].shape[0] == word_dim
+                for w in pre_w2idxs:
+                    pretrained[w.lower()] = np.array(
+                        [float(x) for x in emb_matrix[pre_w2idxs[w]]]).astype(np.float32)
                 if emb_invalid > 0:
                     print 'WARNING: %i invalid lines' % emb_invalid
                 c_found = 0

@@ -14,7 +14,10 @@ import numpy as np
 import sys
 import codecs
 
-def load_train_dev(scope, event, lang, fn_training, fn_dev, out_dir):
+def load_train_dev(scope, event, lang, fn_training, fn_dev, out_dir, tag_scheme=None):
+
+    assert tag_scheme in [None, 'IOB', 'IOBES']
+
     # set training and dev paths
     fn_training = os.path.abspath(fn_training)
     fn_dev = os.path.abspath(fn_dev)
@@ -24,10 +27,10 @@ def load_train_dev(scope, event, lang, fn_training, fn_dev, out_dir):
     dev = Data(fn_dev)
        
     # get all strings
-    sents,tags,tags_uni,labels,cues,scopes,lengths = data2sents([training,dev],event,scope,lang)
+    sents, tags, tags_uni, labels, cues, scopes,lengths = data2sents([training,dev],event,scope,lang,tag_scheme)
 
     # build vocabularies
-    voc, voc_inv = build_vocab(sents, tags, tags_uni,labels,lengths)
+    voc, voc_inv = build_vocab(sents, tags, tags_uni,labels,lengths, tag_scheme)
 
     # transform the tokens into integer indices
     words_idxs, tags_idxs, tags_uni_idxs, cues_idxs, scopes_idxs, labels_idxs = build_input_data(voc, sents, tags, tags_uni, cues, scopes, labels)
@@ -40,19 +43,19 @@ def load_train_dev(scope, event, lang, fn_training, fn_dev, out_dir):
 
     return data
 
-def load_test(fn_test,voc,scope,event,lang):
+def load_test(fn_test,voc,scope,event,lang, tag_scheme = None):
     # get test set
     test = reduce(lambda x,y:x+y,map(lambda z: Data(z),fn_test))
 
     # process the test set
-    sents,tags,tags_uni,labels,cues,scopes,_ = data2sents([test],event,scope,lang)
+    sents,tags,tags_uni,labels,cues,scopes,_ = data2sents([test],event,scope,lang, tag_scheme)
 
     # transform the tokens into integer indices
     words_idxs, tags_idxs, tags_uni_idxs, cues_idxs, scopes_idxs, labels_idxs = build_input_data(voc, sents, tags, tags_uni, cues, scopes, labels)
 
     return words_idxs, tags_idxs, tags_uni_idxs, cues_idxs, scopes_idxs, labels_idxs
 
-def build_vocab(sents, tags, tags_uni, labels,lengths):
+def build_vocab(sents, tags, tags_uni, labels, lengths, tag_scheme):
     def token2idx(cnt):
         return dict([(w,i) for i,w in enumerate(cnt.keys())])
 
@@ -61,7 +64,12 @@ def build_vocab(sents, tags, tags_uni, labels,lengths):
     w2idxs['<UNK>'] = max(w2idxs.values())+1
     t2idxs = token2idx(Counter(chain(*tags)))
     tuni2idxs= token2idx(Counter(chain(*tags_uni)))
-    y2idxs = {'I':0,'O':1,'E':2}
+    if tag_scheme == "IOB":
+        y2idxs = {'I':0, 'O':1, 'B':2}
+    elif tag_scheme == "IOBES":
+        y2idxs = {'I':0, 'O':1, 'B':2, "S":3, "E":4}
+    else:
+        y2idxs = {'I':0, 'O':1}
 
     voc,voc_inv = {},{}
     voc['w2idxs'],voc_inv['idxs2w'] = w2idxs, {i: x for x,i in w2idxs.iteritems()}

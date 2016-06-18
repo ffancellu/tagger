@@ -203,7 +203,7 @@ def create_input(data, parameters, add_label, add_tags, singletons=None):
     pos = data['pos']
     if singletons is not None:
         words = insert_singletons(words, singletons)
-    # char_for, char_rev, char_pos = pad_word_chars(chars)
+    char_for, char_rev, char_pos = pad_word_chars(chars)
     input = []
     if parameters['word_dim']:
         input.append(words)

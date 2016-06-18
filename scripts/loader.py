@@ -156,13 +156,14 @@ def prepare_dataset(sentences, word_to_id, char_to_id, tag_to_id, lower=False):
         })
     return data
 
-def prepare_dataset_scope(lex, idx_lex, idx_cues, idx_pos, idx_tags):
+def prepare_dataset_scope(lex, idx_lex, idx_cues, idx_pos, idx_tags, char_to_id):
     data = []
     for s, idx_s, idx_c, idx_p, idx_t in izip(lex, idx_lex, idx_cues, idx_pos, idx_tags):
         data.append({
             'str_words': s,
             'words': idx_s,
-            'chars': [],
+            'chars': [[char_to_id[c] for c in w if c in char_to_id]
+                 for w in s],
             'cues': idx_c,
             'pos': idx_p,
             'tags': idx_t,

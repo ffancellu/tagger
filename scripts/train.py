@@ -9,10 +9,9 @@ from utils import create_input
 import loader
 
 from data_processing import int_processor,ext_processor
-from utils import models_path, evaluate_scope, eval_script, eval_temp
+from utils import models_path, evaluate_scope
 from loader import word_mapping, char_mapping, tag_mapping
-from loader import update_tag_scheme, prepare_dataset_scope
-from loader import augment_with_pretrained
+from loader import prepare_dataset_scope
 from model import Model
 
 # Read parameters from command line
@@ -70,6 +69,10 @@ optparser.add_option(
     help="Location of pretrained embeddings"
 )
 optparser.add_option(
+    "-v", "--pre_voc", default="",
+    help="Location of the w2idx dict. for the pretrained embeddings"
+)
+optparser.add_option(
     "-A", "--all_emb", default="0",
     type='int', help="Load all embeddings"
 )
@@ -107,6 +110,7 @@ parameters['word_dim'] = opts.word_dim
 parameters['word_lstm_dim'] = opts.word_lstm_dim
 parameters['word_bidirect'] = opts.word_bidirect == 1
 parameters['pre_emb'] = opts.pre_emb
+parameters['pre_voc'] = opts.pre_voc
 parameters['all_emb'] = opts.all_emb == 1
 parameters['train_lang'] = opts.training_lang
 parameters['crf'] = opts.crf == 1
@@ -124,7 +128,7 @@ assert 0. <= parameters['dropout'] < 1.0
 assert parameters['tag_scheme'] in ['iob', 'iobes']
 assert not parameters['all_emb'] or parameters['pre_emb']
 assert not parameters['pre_emb'] or parameters['word_dim'] > 0
-assert not parameters['pre_emb'] or os.path.isfile(parameters['pre_emb'])
+# assert not parameters['pre_emb'] or os.path.isfile(parameters['pre_emb'])
 
 # Check evaluation script / folders
 if not os.path.exists(models_path):
@@ -140,54 +144,21 @@ zeros = parameters['zeros']
 tag_scheme = parameters['tag_scheme']
 tl = parameters['train_lang']
 
-# Load sentences
-# train_sentences = loader.load_sentences(opts.train, lower, zeros)
-# dev_sentences = loader.load_sentences(opts.dev, lower, zeros)
-# test_sentences = loader.load_sentences(opts.test, lower, zeros)
-
-# # Create a dictionary / mapping of words
-# # If we use pretrained embeddings, we add them to the dictionary.
-# if parameters['pre_emb']:
-#     dico_words_train = word_mapping(train_sentences, lower)[0]
-#     dico_words, word_to_id, id_to_word = augment_with_pretrained(
-#         dico_words_train.copy(),
-#         parameters['pre_emb'],
-#         list(itertools.chain.from_iterable(
-#             [[w[0] for w in s] for s in dev_sentences + test_sentences])
-#         ) if not parameters['all_emb'] else None
-#     )
-# else:
-#     dico_words, word_to_id, id_to_word = word_mapping(train_sentences, lower)
-#     dico_words_train = dico_words
-
-# # Create a dictionary and a mapping for words / POS tags / tags
-# dico_chars, char_to_id, id_to_char = char_mapping(train_sentences)
-# dico_tags, tag_to_id, id_to_tag = tag_mapping(train_sentences)
-
 # Load data
-# if not FLAGS.pre_training:
-if parameters['pre_emb'] == "":
-    train_set, valid_set, voc, dic_inv = int_processor.load_train_dev(
-        True,
-        False,
-        tl,
-        opts.train,
-        opts.dev,
-        models_path)
-    test_lex, test_tags, test_tags_uni, test_cue, _, test_y = int_processor.load_test(test_sets, voc, True, False, 'en')
-    # vocsize = len(voc['w2idxs'])
-    # tag_voc_size = len(voc['t2idxs']) if FLAGS.POS_emb == 1 else len(voc['tuni2idxs'])
-else:
-    # train_set, valid_set, dic_inv, pre_emb_w, pre_emb_t = ext_processor.load_train_dev(FLAGS.scope_detection, FLAGS.event_detection, FLAGS.training_lang, FLAGS.embedding_dim, FLAGS.POS_emb)
-    train_set, valid_set, dic_inv, pre_emb_w, pre_emb_t = ext_processor.load_train_dev(True, False, 'en', 50, 2)
-
-    test_set, _, _, _ = ext_processor.load_test(test_sets, True, False, 'en', 50, 2)
-    test_lex, test_tags, test_tags_uni, test_cue, _, test_y = test_set
-    # vocsize = pre_emb_w.shape[0]
-    # tag_voc_size = pre_emb_t.shape[0]
+train_set, valid_set, voc, dic_inv = int_processor.load_train_dev(
+    True,
+    False,
+    tl,
+    opts.train,
+    opts.dev,
+    models_path,
+    "IOBES")
+test_lex, test_tags, test_tags_uni, test_cue, _, test_y = int_processor.load_test(test_sets, voc, True, False, 'en', "IOBES")
 
 train_lex, train_tags, train_tags_uni, train_cue, _, train_y = train_set
 valid_lex, valid_tags, valid_tags_uni, valid_cue, _, valid_y = valid_set
+
+dico_chars, char_to_id, id_to_char = char_mapping([[dic_inv['idxs2w'][t] for t in idx_sent] for idx_sent in train_lex])
 
 # Index data
 train_data = prepare_dataset_scope(
@@ -195,21 +166,24 @@ train_data = prepare_dataset_scope(
     train_lex,
     train_cue,
     train_tags_uni,
-    train_y)
+    train_y,
+    char_to_id)
 
 dev_data = prepare_dataset_scope(
     [[dic_inv['idxs2w'][t] for t in idx_sent] for idx_sent in valid_lex],
     valid_lex,
     valid_cue,
     valid_tags_uni,
-    valid_y)
+    valid_y,
+    char_to_id)
 
 test_data = prepare_dataset_scope(
     [[dic_inv['idxs2w'][t] for t in idx_sent] for idx_sent in test_lex],
     test_lex,
     test_cue,
     test_tags_uni,
-    test_y)
+    test_y,
+    char_to_id)
 
 print "%i / %i / %i sentences in train / dev / test." % (
     len(train_data), len(dev_data), len(test_data))
@@ -218,7 +192,6 @@ word_to_id = voc['w2idxs']
 
 id_to_word = dic_inv['idxs2w']
 id_to_tags = dic_inv['idxs2tuni']
-id_to_char = {}
 id_to_tag = dic_inv['idxs2y']
 
 # Save the mappings to disk
