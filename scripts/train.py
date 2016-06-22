@@ -96,6 +96,10 @@ optparser.add_option(
     "-r", "--reload", default="0",
     type='int', help="Reload the last saved model for testing purposes"
 )
+optparser.add_option(
+    "-F", "--folder_name", default="system0",
+    help="Name of the folder for the current experiment"
+)
 opts = optparser.parse_args()[0]
 
 # Parse parameters
@@ -116,6 +120,7 @@ parameters['train_lang'] = opts.training_lang
 parameters['crf'] = opts.crf == 1
 parameters['dropout'] = opts.dropout
 parameters['lr_method'] = opts.lr_method
+parameters['folder_name'] = opts.folder_name
 
 testing = opts.reload
 

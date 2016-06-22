@@ -26,7 +26,7 @@ class Model(object):
             # Create a name based on the parameters
             self.parameters = parameters
             # self.name = get_name(parameters)
-            self.name = 'test'
+            self.name = parameters['folder_name']
             # Model location
             model_path = os.path.join(models_path, self.name)
             self.model_path = model_path
