@@ -29,7 +29,7 @@ optparser.add_option(
     help="Test set location"
 )
 optparser.add_option(
-    "-s", "--tag_scheme", default="iobes",
+    "-s", "--tag_scheme", default="",
     help="Tagging scheme (IOB or IOBES)"
 )
 optparser.add_option(
@@ -132,7 +132,7 @@ for test_set in test_sets:
     assert os.path.isfile(test_set)
 assert parameters['char_dim'] > 0 or parameters['word_dim'] > 0
 assert 0. <= parameters['dropout'] < 1.0
-assert parameters['tag_scheme'] in ['iob', 'iobes']
+assert parameters['tag_scheme'] in ['iob', 'iobes','']
 assert not parameters['all_emb'] or parameters['pre_emb']
 assert not parameters['pre_emb'] or parameters['word_dim'] > 0
 # assert not parameters['pre_emb'] or os.path.isfile(parameters['pre_emb'])
@@ -159,8 +159,8 @@ train_set, valid_set, voc, dic_inv = int_processor.load_train_dev(
     opts.train,
     opts.dev,
     models_path,
-    "IOBES")
-test_lex, test_tags, test_tags_uni, test_cue, _, test_y = int_processor.load_test(test_sets, voc, True, False, 'en', "IOBES")
+    "")
+test_lex, test_tags, test_tags_uni, test_cue, _, test_y = int_processor.load_test(test_sets, voc, True, False, 'en', "")
 
 train_lex, train_tags, train_tags_uni, train_cue, _, train_y = train_set
 valid_lex, valid_tags, valid_tags_uni, valid_cue, _, valid_y = valid_set

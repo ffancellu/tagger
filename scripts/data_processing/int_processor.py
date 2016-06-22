@@ -14,9 +14,8 @@ import numpy as np
 import sys
 import codecs
 
-def load_train_dev(scope, event, lang, fn_training, fn_dev, out_dir, tag_scheme=None):
+def load_train_dev(scope, event, lang, fn_training, fn_dev, out_dir, tag_scheme=''):
 
-    assert tag_scheme in [None, 'IOB', 'IOBES']
 
     # set training and dev paths
     fn_training = os.path.abspath(fn_training)
@@ -43,7 +42,7 @@ def load_train_dev(scope, event, lang, fn_training, fn_dev, out_dir, tag_scheme=
 
     return data
 
-def load_test(fn_test,voc,scope,event,lang, tag_scheme = None):
+def load_test(fn_test,voc,scope,event,lang, tag_scheme = ''):
     # get test set
     test = reduce(lambda x,y:x+y,map(lambda z: Data(z),fn_test))
 
