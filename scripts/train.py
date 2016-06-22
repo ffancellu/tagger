@@ -37,6 +37,10 @@ optparser.add_option(
     type='int', help="Lowercase words (this will not affect character inputs)"
 )
 optparser.add_option(
+    "-P", "--PoS_tag", default="0",
+    help="0 if None; 1 for normal and 2 for universal"
+)
+optparser.add_option(
     "-z", "--zeros", default="0",
     type='int', help="Replace digits with 0"
 )
@@ -100,6 +104,7 @@ optparser.add_option(
     "-F", "--folder_name", default="system0",
     help="Name of the folder for the current experiment"
 )
+
 opts = optparser.parse_args()[0]
 
 # Parse parameters
@@ -121,6 +126,8 @@ parameters['crf'] = opts.crf == 1
 parameters['dropout'] = opts.dropout
 parameters['lr_method'] = opts.lr_method
 parameters['folder_name'] = opts.folder_name
+parameters['pos_tag'] = opts.PoS_tag
+parameters['pos_emb'] = 0 if opts.PoS_tag == 0 else opts.word_dim
 
 testing = opts.reload
 
@@ -135,6 +142,7 @@ assert 0. <= parameters['dropout'] < 1.0
 assert parameters['tag_scheme'] in ['iob', 'iobes','']
 assert not parameters['all_emb'] or parameters['pre_emb']
 assert not parameters['pre_emb'] or parameters['word_dim'] > 0
+assert parameters['pos_tag'] in [0,1,2]
 # assert not parameters['pre_emb'] or os.path.isfile(parameters['pre_emb'])
 
 # Check evaluation script / folders
@@ -172,7 +180,7 @@ train_data = prepare_dataset_scope(
     [[dic_inv['idxs2w'][t] for t in idx_sent] for idx_sent in train_lex],
     train_lex,
     train_cue,
-    train_tags_uni,
+    train_tags_uni if parameters['pos_emb'] == 2 else train_tags,
     train_y,
     char_to_id)
 
@@ -180,7 +188,7 @@ dev_data = prepare_dataset_scope(
     [[dic_inv['idxs2w'][t] for t in idx_sent] for idx_sent in valid_lex],
     valid_lex,
     valid_cue,
-    valid_tags_uni,
+    valid_tags_uni if parameters['pos_emb'] == 2 else valid_tags,
     valid_y,
     char_to_id)
 
@@ -188,7 +196,7 @@ test_data = prepare_dataset_scope(
     [[dic_inv['idxs2w'][t] for t in idx_sent] for idx_sent in test_lex],
     test_lex,
     test_cue,
-    test_tags_uni,
+    test_tags_uni if parameters['pos_emb'] == 2 else valid_tags,
     test_y,
     char_to_id)
 
@@ -207,7 +215,6 @@ model.save_mappings(id_to_word, id_to_char, id_to_tag)
 
 # Add n_pos to the parameters
 parameters['n_pos'] = len(id_to_tags)
-parameters['pos_dim'] = 100
 
 # Build the model
 print parameters
@@ -218,7 +225,7 @@ f_train, f_eval = model.build(**parameters)
 #
 
 if not testing:
-    n_epochs = 100  # number of epochs over the training set
+    n_epochs = 50  # number of epochs over the training set
     freq_eval = 500  # evaluate on dev every freq_eval steps
     best_dev = -np.inf
     best_test = -np.inf
@@ -228,7 +235,7 @@ if not testing:
         print "Starting epoch %i..." % epoch
         for i, index in enumerate(np.random.permutation(len(train_data))):
             count += 1
-            input = create_input(train_data[index], parameters, True, True)
+            input = create_input(train_data[index], parameters, True, False if parameters['pos_tag']==0 else True)
             new_cost = f_train(*input)
             epoch_costs.append(new_cost)
             if i % 50 == 0 and i > 0 == 0:

@@ -8,7 +8,7 @@ import theano
 import metrics
 
 
-models_path = "./models"
+models_path = os.path.abspath("./models")
 eval_path = "./evaluation"
 eval_temp = os.path.join(eval_path, "temp")
 eval_script = os.path.join(eval_path, "conlleval")
@@ -215,6 +215,7 @@ def create_input(data, parameters, add_label, add_tags, singletons=None):
     input.append(cues)
     if add_tags:
         # add add_tags to arguments
+        print "Adding POS tag info to the input..."
         input.append(pos)
     if add_label:
         input.append(data['tags'])
