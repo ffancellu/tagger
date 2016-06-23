@@ -43,11 +43,14 @@ for test_set in test_sets:
 is_bilbowa = True if opts.folder_name.startswith('bilbowa') else False
 
 folder_path = os.path.abspath(opts.folder_name)
+test_lang = opts.test_lang
+
 # Initialize model
 model = Model(model_path=folder_path, bilbowa=is_bilbowa)
 print "Model location: %s" % model.model_path
 
 # Load parameters, no load mappings
+pos_tag = model.parameters['pos_tag']
 
 # get voc and voc_dic from pickle anyway
 with open(os.path.join(folder_path,'train_dev.pkl'),'rb') as data_pkl:
@@ -55,12 +58,12 @@ with open(os.path.join(folder_path,'train_dev.pkl'),'rb') as data_pkl:
 
 if opts.l != "en" and is_bilbowa:
     # take voc from pickle and create
-    w2idxs, idxs2w = int_processor.get_test_dicts(test_sets, True, False, opts.l, model.parameters['tag_scheme'])
+    w2idxs, idxs2w = int_processor.get_test_dicts(test_sets, True, False, test_lang, model.parameters['tag_scheme'])
     voc['w2idxs'] = w2idxs
     voc_inv['idxs2w'] = idxs2w
 
 # Load dictionaries from pickle
-test_lex, test_tags, test_tags_uni, test_cue, _, test_y = int_processor.load_test(test_sets, voc, True, False, opts.l, model.parameters['tag_scheme'])
+test_lex, test_tags, test_tags_uni, test_cue, _, test_y = int_processor.load_test(test_sets, voc, True, False, test_lang, model.parameters['tag_scheme'])
 
 # NOT RELEVANT FOR THE MOMENT
 dico_chars, char_to_id, id_to_char = char_mapping([[voc_inv['idxs2w'][t] for t in idx_sent] for idx_sent in test_lex])
@@ -92,7 +95,7 @@ print "Model built!"
 # *******INITIALIZE THE MODEL********
 # in the case of Bilbowa we need to initialize a matrix n x emb_dim
 
-f_train, f_eval = model.build(**parameters,training=False)
+f_train, f_eval = model.build(training=False, **model.parameters)
 
 
 # print 'Reloading previous model...'
