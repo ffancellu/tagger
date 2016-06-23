@@ -90,12 +90,14 @@ model.set_mappings(id_to_word, id_to_char, id_to_tags, id_to_y)
 
 
 print "Model built!"
+print model.parameters
+parameters['training'] = 0
 
 
 # *******INITIALIZE THE MODEL********
 # in the case of Bilbowa we need to initialize a matrix n x emb_dim
 
-f_train, f_eval = model.build(training=False, **model.parameters)
+f_train, f_eval = model.build(**model.parameters)
 
 
 # print 'Reloading previous model...'
