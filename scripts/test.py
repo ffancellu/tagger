@@ -99,9 +99,9 @@ model.parameters['n_pos'] = len(id_to_tags)
 f_train, f_eval = model.build(**model.parameters)
 
 
-# print 'Reloading previous model...'
-# model.reload()
-# test_score, pred_test = evaluate_scope(parameters, model.model_path, f_eval, test_data, id_to_tag, False)
+print 'Reloading previous model...'
+model.reload()
+test_score, pred_test = evaluate_scope(model.parameters, model.model_path, f_eval, test_data, id_to_y, False if pos_tag==0 else True)
 
 # output_predTEST = os.path.join(model.model_path, "best_test.output")
 # with codecs.open(output_predTEST, 'w', 'utf8') as f:

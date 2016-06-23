@@ -111,13 +111,17 @@ class Model(object):
         Load components values from disk.
         """
         for name, param in self.components.items():
-            if name == "word_layer" and pre_emb:
+            if name == "word_layer" and self.parameters['pre_emb']!='':
                 new_weights = self.components['word_layer'].embeddings.get_value()
                 # load the trained matrix and mappings
-                trainedM = np.load(os.path.join(os.path.abspath(self.model_path),"word_layer.mat"))
-                trainedV = np.load(os.path.join(os.path.abspath(self.model_path),"mappings.mat"))['id_to_word']
-                trainedV = dict([(w,i) for i,w in trainedV.iteritems()])
+                print "Getting training matrix and dictionary %s..." % os.path.abspath(self.model_path)
+		trainedM = scipy.io.loadmat(os.path.join(os.path.abspath(self.model_path),"word_layer.mat"))['word_layer__embeddings']
+                with open(os.path.join(os.path.abspath(self.model_path),"mappings.pkl")) as voc_file:
+			trainedV = cPickle.load(voc_file)['id_to_word']
+                print "Excerpt from trainedV is...",trainedV.items()[:5]
+		trainedV = dict([(w,i) for i,w in trainedV.iteritems()])
                 # load the external matrix and mappings
+		print "Getting external matrix and dictionary %s..." % os.path.abspath(self.parameters['pre_emb'])
                 extM = np.load(os.path.abspath(self.parameters['pre_emb']))
                 extV = dict([(w,i) for i,w in enumerate(np.load(self.parameters['pre_voc']))])
                 # create a pretrained dictionary containing a mixture of the two matrices
@@ -128,16 +132,16 @@ class Model(object):
                 for w in extV:
                     if w not in trainedV:
                         pretrained[w.lower()] = np.array(
-                        [float(x) for x in extM[extM[w]]]).astype(np.float32)
+                        [float(x) for x in extM[extV[w]]]).astype(np.float32)
                 # Lookup table initialization
-                for i in xrange(n_words):
+                for i in xrange(len(self.id_to_word)):
                     word = self.id_to_word[i]
                     if word in pretrained:
                         new_weights[i] = pretrained[word]
-                        c_found += 1
+                        #c_found += 1
                     elif word.lower() in pretrained:
                         new_weights[i] = pretrained[word.lower()]
-                        c_lower += 1
+                        #c_lower += 1
                 self.components['word_layer'].embeddings.set_value(new_weights)
             else:
                 param_path = os.path.join(self.model_path, "%s.mat" % name)
