@@ -68,6 +68,12 @@ class Model(object):
             }
             cPickle.dump(mappings, f)
 
+    def set_mappings(self, id_to_word, id_to_char, id_to_tags, id_to_y):
+        self.id_to_word = id_to_word
+        self.id_to_char = id_to_char
+        self.id_to_tags = id_to_tags
+        self.id_to_y = id_to_y
+
     def reload_mappings(self, bilbowa):
         """
         Load mappings from disk.
@@ -105,13 +111,42 @@ class Model(object):
         Load components values from disk.
         """
         for name, param in self.components.items():
-            param_path = os.path.join(self.model_path, "%s.mat" % name)
-            param_values = scipy.io.loadmat(param_path)
-            if hasattr(param, 'params'):
-                for p in param.params:
-                    set_values(p.name, p, param_values[p.name])
+            if name == "word_layer" and pre_emb:
+                new_weights = self.components['word_layer'].embeddings.get_value()
+                # load the trained matrix and mappings
+                trainedM = np.load(os.path.join(os.path.abspath(self.model_path),"word_layer.mat"))
+                trainedV = np.load(os.path.join(os.path.abspath(self.model_path),"mappings.mat"))['id_to_word']
+                trainedV = dict([(w,i) for i,w in trainedV.iteritems()])
+                # load the external matrix and mappings
+                extM = np.load(os.path.abspath(self.parameters['pre_emb']))
+                extV = dict([(w,i) for i,w in enumerate(np.load(self.parameters['pre_voc']))])
+                # create a pretrained dictionary containing a mixture of the two matrices
+                pretrained = {}
+                for w in trainedV:
+                    pretrained[w.lower()] = np.array(
+                        [float(x) for x in trainedM[trainedV[w]]]).astype(np.float32)
+                for w in extV:
+                    if w not in trainedV:
+                        pretrained[w.lower()] = np.array(
+                        [float(x) for x in extM[extM[w]]]).astype(np.float32)
+                # Lookup table initialization
+                for i in xrange(n_words):
+                    word = self.id_to_word[i]
+                    if word in pretrained:
+                        new_weights[i] = pretrained[word]
+                        c_found += 1
+                    elif word.lower() in pretrained:
+                        new_weights[i] = pretrained[word.lower()]
+                        c_lower += 1
+                self.components['word_layer'].embeddings.set_value(new_weights)
             else:
-                set_values(name, param, param_values[name])
+                param_path = os.path.join(self.model_path, "%s.mat" % name)
+                param_values = scipy.io.loadmat(param_path)
+                if hasattr(param, 'params'):
+                    for p in param.params:
+                        set_values(p.name, p, param_values[p.name])
+                else:
+                    set_values(name, param, param_values[name])
 
     def build(self,
               dropout,
@@ -151,7 +186,6 @@ class Model(object):
         char_rev_ids = T.imatrix(name='char_rev_ids')
         char_pos_ids = T.ivector(name='char_pos_ids')
         tag_ids = T.ivector(name='tag_ids')
-        # if cap_dim:
         cap_ids = T.ivector(name='cap_ids')
         if pos_dim:
             pos_ids = T.ivector(name='pos_ids')
@@ -213,7 +247,9 @@ class Model(object):
                 print ('%i found directly, %i after lowercasing, '
                        '%i after lowercasing + zero.') % (
                           c_found, c_lower, c_zeros
-                      )
+                      ) 
+
+
 
         #
         # Chars inputs

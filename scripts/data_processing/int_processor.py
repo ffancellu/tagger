@@ -129,5 +129,6 @@ def get_test_dicts(fn_test, scope, event, lang, tag_scheme):
     sents, _, _, _, _, _, _ = data2sents([test], event, scope, lang, tag_scheme)
 
     w2idxs = token2idx(Counter(chain(*sents)))
+    w2idxs["<UNK>"] = max(w2idxs.values())+1
 
     return w2idxs, {i: x for x,i in w2idxs.iteritems()}
