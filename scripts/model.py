@@ -162,7 +162,7 @@ class Model(object):
               crf,
               pos_dim,
               n_pos,
-              training,
+              training=True,
               **kwargs
               ):
         """
