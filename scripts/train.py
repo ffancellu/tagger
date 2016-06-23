@@ -168,9 +168,9 @@ train_set, valid_set, voc, dic_inv = int_processor.load_train_dev(
     tl,
     opts.train,
     opts.dev,
-    models_path,
-    "")
-test_lex, test_tags, test_tags_uni, test_cue, _, test_y = int_processor.load_test(test_sets, voc, True, False, 'en', "")
+    model.model_path,
+    tag_scheme)
+test_lex, test_tags, test_tags_uni, test_cue, _, test_y = int_processor.load_test(test_sets, voc, True, False, 'en', tag_scheme)
 
 train_lex, train_tags, train_tags_uni, train_cue, _, train_y = train_set
 valid_lex, valid_tags, valid_tags_uni, valid_cue, _, valid_y = valid_set
@@ -209,11 +209,11 @@ word_to_id = voc['w2idxs']
 
 id_to_word = dic_inv['idxs2w']
 id_to_tags = dic_inv['idxs2tuni'] if pos_tag == 2 else dic_inv['idxs2t']
-id_to_tag = dic_inv['idxs2y']
+id_to_y = dic_inv['idxs2y']
 
 # Save the mappings to disk
 print 'Saving the mappings to disk...'
-model.save_mappings(id_to_word, id_to_char, id_to_tag)
+model.save_mappings(id_to_word, id_to_char, id_to_tags, id_to_y)
 
 # Add n_pos to the parameters
 parameters['n_pos'] = len(id_to_tags)
