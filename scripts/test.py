@@ -56,7 +56,7 @@ pos_tag = model.parameters['pos_tag']
 with open(os.path.join(folder_path,'train_dev.pkl'),'rb') as data_pkl:
     _, _, voc, voc_inv = cPickle.load(data_pkl)
 
-if opts.l != "en" and is_bilbowa:
+if test_lang != "en" and is_bilbowa:
     # take voc from pickle and create
     w2idxs, idxs2w = int_processor.get_test_dicts(test_sets, True, False, test_lang, model.parameters['tag_scheme'])
     voc['w2idxs'] = w2idxs
