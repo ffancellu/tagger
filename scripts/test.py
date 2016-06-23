@@ -69,7 +69,7 @@ test_lex, test_tags, test_tags_uni, test_cue, _, test_y = int_processor.load_tes
 dico_chars, char_to_id, id_to_char = char_mapping([[voc_inv['idxs2w'][t] for t in idx_sent] for idx_sent in test_lex])
 
 test_data = prepare_dataset_scope(
-    [[dic_inv['idxs2w'][t] for t in idx_sent] for idx_sent in test_lex],
+    [[voc_inv['idxs2w'][t] for t in idx_sent] for idx_sent in test_lex],
     test_lex,
     test_cue,
     test_tags_uni if pos_tag == 2 else test_tags,
@@ -80,9 +80,9 @@ print "%i sentences in test." % len(test_data)
 
 word_to_id = voc['w2idxs']
 
-id_to_word = dic_inv['idxs2w']
-id_to_tags = dic_inv['idxs2tuni'] if pos_tag == 2 else dic_inv['idxs2t']
-id_to_y = dic_inv['idxs2y']
+id_to_word = voc_inv['idxs2w']
+id_to_tags = voc_inv['idxs2tuni'] if pos_tag == 2 else voc_inv['idxs2t']
+id_to_y = voc_inv['idxs2y']
 
 # Save the mappings to disk
 print 'Set new mappings...'
