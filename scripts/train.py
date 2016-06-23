@@ -243,20 +243,20 @@ if not testing:
             if i % 50 == 0 and i > 0 == 0:
                 print "%i, cost average: %f" % (i, np.mean(epoch_costs[-50:]))
             if count % freq_eval == 0:
-                dev_score, pred_dev = evaluate_scope(parameters, model.model_path, f_eval, dev_data, id_to_tag, False if pos_tag==0 else True)
+                dev_score, pred_dev = evaluate_scope(parameters, model.model_path, f_eval, dev_data, id_to_y, False if pos_tag==0 else True)
                 if dev_score > best_dev:
                     best_dev = dev_score
                     print "New best score on dev."
                     print "Saving model to disk..."
                     model.save()
-                    test_score, pred_test = evaluate_scope(parameters, model.model_path, f_eval, test_data, id_to_tag, False if pos_tag==0 else True, False)
+                    # test_score, pred_test = evaluate_scope(parameters, model.model_path, f_eval, test_data, id_to_y, False if pos_tag==0 else True, False)
                     # Store predictions to disk
                     output_predDEV = os.path.join(model.model_path, "best_dev.output")
                     with codecs.open(output_predDEV, 'w', 'utf8') as f:
                         f.write("\n".join(pred_dev))
-                    output_predTEST = os.path.join(model.model_path, "best_test.output")
-                    with codecs.open(output_predTEST, 'w', 'utf8') as f:
-                        f.write("\n".join(pred_test))
+                    # output_predTEST = os.path.join(model.model_path, "best_test.output")
+                    # with codecs.open(output_predTEST, 'w', 'utf8') as f:
+                    #     f.write("\n".join(pred_test))
                     print "Predictions for the round stored."
         print "Epoch %i done. Average cost: %f" % (epoch, np.mean(epoch_costs))
 
