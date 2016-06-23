@@ -16,7 +16,6 @@ import codecs
 
 def load_train_dev(scope, event, lang, fn_training, fn_dev, out_dir, tag_scheme=''):
 
-
     # set training and dev paths
     fn_training = os.path.abspath(fn_training)
     fn_dev = os.path.abspath(fn_dev)
@@ -122,3 +121,13 @@ def pickle_data(out_dir,data):
         cPickle.dump(data,f)
     print "Data stored!"
 
+# function added for Bilbowa compatibility
+def get_test_dicts(fn_test, scope, event, lang, tag_scheme):
+
+    test = reduce(lambda x,y:x+y,map(lambda z: Data(z),fn_test))
+
+    sents, _, _, _, _, _, _ = data2sents([test], event, scope, lang, tag_scheme)
+
+    w2idxs = token2idx(Counter(chain(*sents)))
+
+    return w2idxs, {i: x for x,i in w2idxs.iteritems()}

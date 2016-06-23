@@ -16,7 +16,7 @@ class Model(object):
     """
     Network architecture.
     """
-    def __init__(self, parameters=None, models_path=None, model_path=None):
+    def __init__(self, parameters=None, models_path=None, model_path=None, bilbowa=None):
         """
         Initialize the model. We either provide the parameters and a path where
         we store the models, or the location of a trained model.
@@ -47,33 +47,37 @@ class Model(object):
             # Load the parameters and the mappings from disk
             with open(self.parameters_path, 'rb') as f:
                 self.parameters = cPickle.load(f)
-            self.reload_mappings()
+            self.reload_mappings(bilbowa)
+
         self.components = {}
 
-    def save_mappings(self, id_to_word, id_to_char, id_to_tag):
+    def save_mappings(self, id_to_word, id_to_char, id_to_tags, id_to_y):
         """
         We need to save the mappings if we want to use the model later.
         """
         self.id_to_word = id_to_word
         self.id_to_char = id_to_char
-        self.id_to_tag = id_to_tag
+        self.id_to_tags = id_to_tags
+        self.id_to_y = id_to_y
         with open(self.mappings_path, 'wb') as f:
             mappings = {
                 'id_to_word': self.id_to_word,
                 'id_to_char': self.id_to_char,
-                'id_to_tag': self.id_to_tag,
+                'id_to_tags': self.id_to_tags,
+                'id_to_tag': self.id_to_y,
             }
             cPickle.dump(mappings, f)
 
-    def reload_mappings(self):
+    def reload_mappings(self, bilbowa):
         """
         Load mappings from disk.
         """
         with open(self.mappings_path, 'rb') as f:
             mappings = cPickle.load(f)
-        self.id_to_word = mappings['id_to_word']
-        self.id_to_char = mappings['id_to_char']
-        self.id_to_tag = mappings['id_to_tag']
+        self.id_to_word = mappings['id_to_word'] if not bilbowa else {}
+        self.id_to_char = mappings['id_to_char'] if not bilbowa else {}
+        self.id_to_tags = mappings['id_to_tags']
+        self.id_to_y = mappings['id_to_tag']
 
     def add_component(self, param):
         """
@@ -133,7 +137,7 @@ class Model(object):
         # Training parameters
         n_words = len(self.id_to_word)
         n_chars = len(self.id_to_char)
-        n_tags = len(self.id_to_tag)
+        n_tags = len(self.id_to_y)
         n_cap = 2
 
         # Number of capitalization features
