@@ -349,8 +349,9 @@ class Model(object):
         self.add_component(cap_layer)
         params.extend(cap_layer.params)
         # Add pos tag layer
-        self.add_component(pos_layer)
-        params.extend(pos_layer.params)
+        if pos_dim:
+	    self.add_component(pos_layer)
+            params.extend(pos_layer.params)
 
         self.add_component(final_layer)
         params.extend(final_layer.params)
@@ -373,7 +374,8 @@ class Model(object):
         # add cue vector to the inputs
         eval_inputs.append(cap_ids)
         # add pos vector to the inputs
-        eval_inputs.append(pos_ids)
+        if pos_dim:
+            eval_inputs.append(pos_ids)
 
         train_inputs = eval_inputs + [tag_ids]
 

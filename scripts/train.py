@@ -126,10 +126,12 @@ parameters['crf'] = opts.crf == 1
 parameters['dropout'] = opts.dropout
 parameters['lr_method'] = opts.lr_method
 parameters['folder_name'] = opts.folder_name
-parameters['pos_tag'] = opts.PoS_tag
-parameters['pos_emb'] = 0 if opts.PoS_tag == 0 else opts.word_dim
 
 testing = opts.reload
+
+# Add the POS tag info?
+pos_tag = int(opts.PoS_tag)
+parameters['pos_dim'] = opts.word_dim if pos_tag in [1,2] else 0
 
 # Check parameters validity
 assert os.path.isfile(opts.train)
@@ -142,7 +144,7 @@ assert 0. <= parameters['dropout'] < 1.0
 assert parameters['tag_scheme'] in ['iob', 'iobes','']
 assert not parameters['all_emb'] or parameters['pre_emb']
 assert not parameters['pre_emb'] or parameters['word_dim'] > 0
-assert parameters['pos_tag'] in [0,1,2]
+assert pos_tag in [0,1,2]
 # assert not parameters['pre_emb'] or os.path.isfile(parameters['pre_emb'])
 
 # Check evaluation script / folders
@@ -180,7 +182,7 @@ train_data = prepare_dataset_scope(
     [[dic_inv['idxs2w'][t] for t in idx_sent] for idx_sent in train_lex],
     train_lex,
     train_cue,
-    train_tags_uni if parameters['pos_emb'] == 2 else train_tags,
+    train_tags_uni if pos_tag == 2 else train_tags,
     train_y,
     char_to_id)
 
@@ -188,7 +190,7 @@ dev_data = prepare_dataset_scope(
     [[dic_inv['idxs2w'][t] for t in idx_sent] for idx_sent in valid_lex],
     valid_lex,
     valid_cue,
-    valid_tags_uni if parameters['pos_emb'] == 2 else valid_tags,
+    valid_tags_uni if pos_tag == 2 else valid_tags,
     valid_y,
     char_to_id)
 
@@ -196,7 +198,7 @@ test_data = prepare_dataset_scope(
     [[dic_inv['idxs2w'][t] for t in idx_sent] for idx_sent in test_lex],
     test_lex,
     test_cue,
-    test_tags_uni if parameters['pos_emb'] == 2 else valid_tags,
+    test_tags_uni if pos_tag == 2 else test_tags,
     test_y,
     char_to_id)
 
@@ -206,7 +208,7 @@ print "%i / %i / %i sentences in train / dev / test." % (
 word_to_id = voc['w2idxs']
 
 id_to_word = dic_inv['idxs2w']
-id_to_tags = dic_inv['idxs2tuni']
+id_to_tags = dic_inv['idxs2tuni'] if pos_tag == 2 else dic_inv['idxs2t']
 id_to_tag = dic_inv['idxs2y']
 
 # Save the mappings to disk
@@ -235,19 +237,19 @@ if not testing:
         print "Starting epoch %i..." % epoch
         for i, index in enumerate(np.random.permutation(len(train_data))):
             count += 1
-            input = create_input(train_data[index], parameters, True, False if parameters['pos_tag']==0 else True)
+            input = create_input(train_data[index], parameters, True, False if pos_tag==0 else True)
             new_cost = f_train(*input)
             epoch_costs.append(new_cost)
             if i % 50 == 0 and i > 0 == 0:
                 print "%i, cost average: %f" % (i, np.mean(epoch_costs[-50:]))
             if count % freq_eval == 0:
-                dev_score, pred_dev = evaluate_scope(parameters, model.model_path, f_eval, dev_data, id_to_tag)
+                dev_score, pred_dev = evaluate_scope(parameters, model.model_path, f_eval, dev_data, id_to_tag, False if pos_tag==0 else True)
                 if dev_score > best_dev:
                     best_dev = dev_score
                     print "New best score on dev."
                     print "Saving model to disk..."
                     model.save()
-                    test_score, pred_test = evaluate_scope(parameters, model.model_path, f_eval, test_data, id_to_tag, False)
+                    test_score, pred_test = evaluate_scope(parameters, model.model_path, f_eval, test_data, id_to_tag, False if pos_tag==0 else True, False)
                     # Store predictions to disk
                     output_predDEV = os.path.join(model.model_path, "best_dev.output")
                     with codecs.open(output_predDEV, 'w', 'utf8') as f:

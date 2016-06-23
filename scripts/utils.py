@@ -8,7 +8,7 @@ import theano
 import metrics
 
 
-models_path = os.path.abspath("./models")
+models_path = os.path.abspath("./tagger/models")
 eval_path = "./evaluation"
 eval_temp = os.path.join(eval_path, "temp")
 eval_script = os.path.join(eval_path, "conlleval")
@@ -215,13 +215,12 @@ def create_input(data, parameters, add_label, add_tags, singletons=None):
     input.append(cues)
     if add_tags:
         # add add_tags to arguments
-        print "Adding POS tag info to the input..."
         input.append(pos)
     if add_label:
         input.append(data['tags'])
     return input
 
-def evaluate_scope(parameters, out_dir,f_eval, data, id_to_tag, dev=True):
+def evaluate_scope(parameters, out_dir,f_eval, data, id_to_tag, pos=False, dev=True):
     """
     Evaluate current model using CoNLL script.
     """
@@ -232,7 +231,7 @@ def evaluate_scope(parameters, out_dir,f_eval, data, id_to_tag, dev=True):
 
     # for raw_sentence, data in zip(raw_sentences, parsed_sentences):
     for sentence in data:
-        input = create_input(sentence, parameters, False, True)
+        input = create_input(sentence, parameters, False, pos)
         if parameters['crf']:
             y_preds = np.array(f_eval(*input))[1:-1]
         else:
