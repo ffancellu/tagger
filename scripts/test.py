@@ -68,6 +68,7 @@ test_lex, test_tags, test_tags_uni, test_cue, _, test_y = int_processor.load_tes
 # NOT RELEVANT FOR THE MOMENT
 dico_chars, char_to_id, id_to_char = char_mapping([[voc_inv['idxs2w'][t] for t in idx_sent] for idx_sent in test_lex])
 
+# prepare dataset
 test_data = prepare_dataset_scope(
     [[voc_inv['idxs2w'][t] for t in idx_sent] for idx_sent in test_lex],
     test_lex,
@@ -78,6 +79,7 @@ test_data = prepare_dataset_scope(
 
 print "%i sentences in test." % len(test_data)
 
+# Set the dictionaries
 word_to_id = voc['w2idxs']
 
 id_to_word = voc_inv['idxs2w']
@@ -92,10 +94,10 @@ model.set_mappings(id_to_word, id_to_char, id_to_tags, id_to_y)
 print "Model built!"
 print model.parameters
 model.parameters['n_pos'] = len(id_to_tags)
+model.parameters['training'] = 0
 
 # *******INITIALIZE THE MODEL********
 # in the case of Bilbowa we need to initialize a matrix n x emb_dim
-
 f_train, f_eval = model.build(**model.parameters)
 
 
@@ -103,7 +105,7 @@ print 'Reloading previous model...'
 model.reload()
 test_score, pred_test = evaluate_scope(model.parameters, model.model_path, f_eval, test_data, id_to_y, False if pos_tag==0 else True)
 
-# output_predTEST = os.path.join(model.model_path, "best_test.output")
-# with codecs.open(output_predTEST, 'w', 'utf8') as f:
-#     f.write("\n".join(pred_test))
-# print "Test files stored!"
+output_predTEST = os.path.join(model.model_path, "best_test.output")
+with codecs.open(output_predTEST, 'w', 'utf8') as f:
+    f.write("\n".join(pred_test))
+print "Test files stored!"

@@ -24,10 +24,10 @@ optparser.add_option(
     "-d", "--dev", default="",
     help="Dev set location"
 )
-optparser.add_option(
-    "-t", "--test", default="",
-    help="Test set location"
-)
+# optparser.add_option(
+#     "-t", "--test", default="",
+#     help="Test set location"
+# )
 optparser.add_option(
     "-s", "--tag_scheme", default="",
     help="Tagging scheme (IOB or IOBES)"
@@ -96,10 +96,10 @@ optparser.add_option(
     "-L", "--lr_method", default="sgd-lr_.005",
     help="Learning method (SGD, Adadelta, Adam..)"
 )
-optparser.add_option(
-    "-r", "--reload", default="0",
-    type='int', help="Reload the last saved model for testing purposes"
-)
+# optparser.add_option(
+#     "-r", "--reload", default="0",
+#     type='int', help="Reload the last saved model for testing purposes"
+# )
 optparser.add_option(
     "-F", "--folder_name", default="system0",
     help="Name of the folder for the current experiment"
@@ -136,9 +136,9 @@ parameters['pos_dim'] = opts.word_dim if pos_tag in [1,2] else 0
 # Check parameters validity
 assert os.path.isfile(opts.train)
 assert os.path.isfile(opts.dev)
-test_sets = opts.test.split(',')
-for test_set in test_sets:
-    assert os.path.isfile(test_set)
+# test_sets = opts.test.split(',')
+# for test_set in test_sets:
+#     assert os.path.isfile(test_set)
 assert parameters['char_dim'] > 0 or parameters['word_dim'] > 0
 assert 0. <= parameters['dropout'] < 1.0
 assert parameters['tag_scheme'] in ['iob', 'iobes','']
@@ -170,7 +170,7 @@ train_set, valid_set, voc, dic_inv = int_processor.load_train_dev(
     opts.dev,
     model.model_path,
     tag_scheme)
-test_lex, test_tags, test_tags_uni, test_cue, _, test_y = int_processor.load_test(test_sets, voc, True, False, 'en', tag_scheme)
+# test_lex, test_tags, test_tags_uni, test_cue, _, test_y = int_processor.load_test(test_sets, voc, True, False, 'en', tag_scheme)
 
 train_lex, train_tags, train_tags_uni, train_cue, _, train_y = train_set
 valid_lex, valid_tags, valid_tags_uni, valid_cue, _, valid_y = valid_set
@@ -194,16 +194,16 @@ dev_data = prepare_dataset_scope(
     valid_y,
     char_to_id)
 
-test_data = prepare_dataset_scope(
-    [[dic_inv['idxs2w'][t] for t in idx_sent] for idx_sent in test_lex],
-    test_lex,
-    test_cue,
-    test_tags_uni if pos_tag == 2 else test_tags,
-    test_y,
-    char_to_id)
+# test_data = prepare_dataset_scope(
+#     [[dic_inv['idxs2w'][t] for t in idx_sent] for idx_sent in test_lex],
+#     test_lex,
+#     test_cue,
+#     test_tags_uni if pos_tag == 2 else test_tags,
+#     test_y,
+#     char_to_id)
 
-print "%i / %i / %i sentences in train / dev / test." % (
-    len(train_data), len(dev_data), len(test_data))
+print "%i / %i sentences in train / dev" % (
+    len(train_data), len(dev_data))
 
 word_to_id = voc['w2idxs']
 
@@ -226,46 +226,31 @@ f_train, f_eval = model.build(**parameters)
 # Train network
 #
 
-if not testing:
-    n_epochs = 50  # number of epochs over the training set
-    freq_eval = 500  # evaluate on dev every freq_eval steps
-    best_dev = -np.inf
-    best_test = -np.inf
-    count = 0
-    for epoch in xrange(n_epochs):
-        epoch_costs = []
-        print "Starting epoch %i..." % epoch
-        for i, index in enumerate(np.random.permutation(len(train_data))):
-            count += 1
-            input = create_input(train_data[index], parameters, True, False if pos_tag==0 else True)
-            new_cost = f_train(*input)
-            epoch_costs.append(new_cost)
-            if i % 50 == 0 and i > 0 == 0:
-                print "%i, cost average: %f" % (i, np.mean(epoch_costs[-50:]))
-            if count % freq_eval == 0:
-                dev_score, pred_dev = evaluate_scope(parameters, model.model_path, f_eval, dev_data, id_to_y, False if pos_tag==0 else True)
-                if dev_score > best_dev:
-                    best_dev = dev_score
-                    print "New best score on dev."
-                    print "Saving model to disk..."
-                    model.save()
-                    # test_score, pred_test = evaluate_scope(parameters, model.model_path, f_eval, test_data, id_to_y, False if pos_tag==0 else True, False)
-                    # Store predictions to disk
-                    output_predDEV = os.path.join(model.model_path, "best_dev.output")
-                    with codecs.open(output_predDEV, 'w', 'utf8') as f:
-                        f.write("\n".join(pred_dev))
-                    # output_predTEST = os.path.join(model.model_path, "best_test.output")
-                    # with codecs.open(output_predTEST, 'w', 'utf8') as f:
-                    #     f.write("\n".join(pred_test))
-                    print "Predictions for the round stored."
-        print "Epoch %i done. Average cost: %f" % (epoch, np.mean(epoch_costs))
-
-else:
-    print 'Reloading previous model...'
-    model.reload()
-    test_score, pred_test = evaluate_scope(parameters, model.model_path, f_eval, test_data, id_to_tag, False)
-
-    output_predTEST = os.path.join(model.model_path, "best_test.output")
-    with codecs.open(output_predTEST, 'w', 'utf8') as f:
-        f.write("\n".join(pred_test))
-    print "Test files stored!"
+n_epochs = 50  # number of epochs over the training set
+freq_eval = 500  # evaluate on dev every freq_eval steps
+best_dev = -np.inf
+best_test = -np.inf
+count = 0
+for epoch in xrange(n_epochs):
+    epoch_costs = []
+    print "Starting epoch %i..." % epoch
+    for i, index in enumerate(np.random.permutation(len(train_data))):
+        count += 1
+        input = create_input(train_data[index], parameters, True, False if pos_tag==0 else True)
+        new_cost = f_train(*input)
+        epoch_costs.append(new_cost)
+        if i % 50 == 0 and i > 0 == 0:
+            print "%i, cost average: %f" % (i, np.mean(epoch_costs[-50:]))
+        if count % freq_eval == 0:
+            dev_score, pred_dev = evaluate_scope(parameters, model.model_path, f_eval, dev_data, id_to_y, False if pos_tag==0 else True)
+            if dev_score > best_dev:
+                best_dev = dev_score
+                print "New best score on dev."
+                print "Saving model to disk..."
+                model.save()
+                # Store predictions to disk
+                output_predDEV = os.path.join(model.model_path, "best_dev.output")
+                with codecs.open(output_predDEV, 'w', 'utf8') as f:
+                    f.write("\n".join(pred_dev))
+                print "Predictions for the round stored."
+    print "Epoch %i done. Average cost: %f" % (epoch, np.mean(epoch_costs))

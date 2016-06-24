@@ -166,7 +166,7 @@ class Model(object):
               crf,
               pos_dim,
               n_pos,
-              training=False,
+              training = 1,
               **kwargs
               ):
         """
@@ -178,10 +178,6 @@ class Model(object):
         n_chars = len(self.id_to_char)
         n_tags = len(self.id_to_y)
         n_cap = 2
-
-        # Number of capitalization features
-        # if cap_dim:
-        #     n_cap = 2
 
         # Network variables
         is_train = T.iscalar('is_train')
