@@ -24,10 +24,6 @@ optparser.add_option(
     "-d", "--dev", default="",
     help="Dev set location"
 )
-# optparser.add_option(
-#     "-t", "--test", default="",
-#     help="Test set location"
-# )
 optparser.add_option(
     "-s", "--tag_scheme", default="",
     help="Tagging scheme (IOB or IOBES)"
@@ -96,10 +92,6 @@ optparser.add_option(
     "-L", "--lr_method", default="sgd-lr_.005",
     help="Learning method (SGD, Adadelta, Adam..)"
 )
-# optparser.add_option(
-#     "-r", "--reload", default="0",
-#     type='int', help="Reload the last saved model for testing purposes"
-# )
 optparser.add_option(
     "-F", "--folder_name", default="system0",
     help="Name of the folder for the current experiment"
@@ -127,25 +119,19 @@ parameters['dropout'] = opts.dropout
 parameters['lr_method'] = opts.lr_method
 parameters['folder_name'] = opts.folder_name
 
-testing = opts.reload
-
 # Add the POS tag info?
-pos_tag = int(opts.PoS_tag)
+parameters['pos_tag'] = pos_tag = int(opts.PoS_tag)
 parameters['pos_dim'] = opts.word_dim if pos_tag in [1,2] else 0
 
 # Check parameters validity
 assert os.path.isfile(opts.train)
 assert os.path.isfile(opts.dev)
-# test_sets = opts.test.split(',')
-# for test_set in test_sets:
-#     assert os.path.isfile(test_set)
 assert parameters['char_dim'] > 0 or parameters['word_dim'] > 0
 assert 0. <= parameters['dropout'] < 1.0
 assert parameters['tag_scheme'] in ['iob', 'iobes','']
 assert not parameters['all_emb'] or parameters['pre_emb']
 assert not parameters['pre_emb'] or parameters['word_dim'] > 0
 assert pos_tag in [0,1,2]
-# assert not parameters['pre_emb'] or os.path.isfile(parameters['pre_emb'])
 
 # Check evaluation script / folders
 if not os.path.exists(models_path):
@@ -170,7 +156,6 @@ train_set, valid_set, voc, dic_inv = int_processor.load_train_dev(
     opts.dev,
     model.model_path,
     tag_scheme)
-# test_lex, test_tags, test_tags_uni, test_cue, _, test_y = int_processor.load_test(test_sets, voc, True, False, 'en', tag_scheme)
 
 train_lex, train_tags, train_tags_uni, train_cue, _, train_y = train_set
 valid_lex, valid_tags, valid_tags_uni, valid_cue, _, valid_y = valid_set
@@ -193,14 +178,6 @@ dev_data = prepare_dataset_scope(
     valid_tags_uni if pos_tag == 2 else valid_tags,
     valid_y,
     char_to_id)
-
-# test_data = prepare_dataset_scope(
-#     [[dic_inv['idxs2w'][t] for t in idx_sent] for idx_sent in test_lex],
-#     test_lex,
-#     test_cue,
-#     test_tags_uni if pos_tag == 2 else test_tags,
-#     test_y,
-#     char_to_id)
 
 print "%i / %i sentences in train / dev" % (
     len(train_data), len(dev_data))
